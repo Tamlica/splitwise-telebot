@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 async def handle_new_order(record: dict) -> None:
     order_id = record["id"]
     group_chat_id = record["group_chat_id"]
+    thread_id = record.get("telegram_thread_id")
     location = record["location"]
     order_date = record["order_date"]
     payer_id = record["payer_id"]
@@ -28,6 +29,11 @@ async def handle_new_order(record: dict) -> None:
     text = format_order_message(location, order_date, payer_name, items)
     keyboard = build_settlement_keyboard(items)
 
-    sent = await bot.send_message(chat_id=group_chat_id, text=text, reply_markup=keyboard)
+    sent = await bot.send_message(
+        chat_id=group_chat_id,
+        text=text,
+        reply_markup=keyboard,
+        message_thread_id=thread_id,
+    )
 
     db.set_order_telegram_message_id(order_id, sent.message_id)

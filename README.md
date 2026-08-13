@@ -44,10 +44,29 @@ scripts/
 - `POST /api/orders` - hit by a Supabase Database Webhook on `INSERT` into
   `orders`. Requires header `X-Webhook-Secret: <ORDERS_WEBHOOK_SECRET>` or
   it returns 401. Formats and sends the order summary + settle buttons to
-  `orders.group_chat_id`, then writes the resulting message id back onto
+  `orders.group_chat_id` (and `orders.telegram_thread_id` if the group uses
+  Topics - see below), then writes the resulting message id back onto
   `orders.telegram_message_id`.
 - `POST /telegram/webhook` - standard Telegram webhook receiver; hands the
   raw update to the aiogram `Dispatcher`.
+
+## Posting into a specific Telegram topic
+
+If the group has Topics enabled and you want order summaries posted into
+one topic instead of General:
+
+1. Enable Topics on the group (group settings → Topics) and create the
+   topic, e.g. "Lunch Orders".
+2. Send any message into that topic, then look at the payload your bot
+   receives for it (or call `getUpdates`) - it has a `message_thread_id`
+   field. That's the topic's thread id.
+3. Set `VITE_TELEGRAM_TOPIC_ID` in `splitwise`'s env to that number. New
+   orders will carry it as `orders.telegram_thread_id`, and this service
+   passes it as `message_thread_id` when sending the order message.
+
+Leave it unset to post to General. Editing an existing message (settlement
+updates) doesn't need the thread id - `chat_id` + `message_id` already
+pin down the exact message regardless of which topic it's in.
 
 ## Known simplifications
 
